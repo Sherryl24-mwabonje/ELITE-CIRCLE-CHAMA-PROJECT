@@ -1,0 +1,5 @@
+bin/
+*.class
+db.properties
+.vscode/*
+!.vscode/settings.json
