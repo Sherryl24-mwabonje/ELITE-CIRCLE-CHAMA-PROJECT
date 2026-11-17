@@ -1,8 +1,10 @@
--- ELITE CIRCLE CHAMA : database schema (MySQL 8+)
+
+-- ELITE CIRCLE CHAMA: Database schema (MySQL 8+)
+
 CREATE DATABASE IF NOT EXISTS elite_circle_chama;
 USE elite_circle_chama;
 
--- Main table 1: chama members
+-- Main table 1: Chama members
 CREATE TABLE IF NOT EXISTS members (
     member_id INT AUTO_INCREMENT PRIMARY KEY,
     full_name VARCHAR(100) NOT NULL,
@@ -14,7 +16,7 @@ CREATE TABLE IF NOT EXISTS members (
     status VARCHAR(10) NOT NULL DEFAULT 'Active'
 );
 
--- Main table 2: contributions linked to members
+-- Main table 2: Contributions linked to members
 CREATE TABLE IF NOT EXISTS contributions (
     contribution_id INT AUTO_INCREMENT PRIMARY KEY,
     member_id INT NOT NULL,

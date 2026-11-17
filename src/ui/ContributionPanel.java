@@ -1,14 +1,14 @@
 package ui;
 
 import dao.ContributionDAO;
-import model.Contribution;
-
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.util.List;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.List;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import model.Contribution;
 
 public class ContributionPanel extends JPanel {
 
@@ -27,6 +27,7 @@ public class ContributionPanel extends JPanel {
     private JButton updateButton;
     private JButton deleteButton;
     private JButton clearButton;
+    private JLabel totalContributionsLabel;
 
     public ContributionPanel() {
 
@@ -69,6 +70,8 @@ public class ContributionPanel extends JPanel {
         buttonPanel.add(updateButton);
         buttonPanel.add(deleteButton);
         buttonPanel.add(clearButton);
+        totalContributionsLabel = new JLabel("Total Contributions: KSh 0.00");
+buttonPanel.add(totalContributionsLabel);
 
         // Create contributions table
         tableModel = new DefaultTableModel(
@@ -100,9 +103,9 @@ public class ContributionPanel extends JPanel {
                 displaySelectedContribution();
             }
         });
-
-        loadContributions();
     }
+
+        
 
     // Clear input fields
     private void clearFields() {
@@ -160,10 +163,10 @@ public class ContributionPanel extends JPanel {
         } catch (IllegalArgumentException e) {
             JOptionPane.showMessageDialog(this, e.getMessage());
 
-        } catch (RuntimeException e) {
-            JOptionPane.showMessageDialog(this,
-                "Could not add contribution: " + e.getMessage());
-        }
+        } catch (SQLException e) {
+    JOptionPane.showMessageDialog(this,
+        "Could not add contribution: " + e.getMessage());
+}
     }
 
     // Display selected contribution in form
@@ -196,50 +199,53 @@ public class ContributionPanel extends JPanel {
         );
     }
 
-    // Update contribution
     private void updateContribution() {
 
-        int selectedRow = contributionTable.getSelectedRow();
+    int selectedRow = contributionTable.getSelectedRow();
 
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this,
-                "Please select a contribution to update.");
-            return;
-        }
+    if (selectedRow == -1) {
+        JOptionPane.showMessageDialog(this,
+            "Please select a contribution to update.");
+        return;
+    }
 
-        try {
-            int contributionId = Integer.parseInt(
-                tableModel.getValueAt(selectedRow, 0).toString()
-            );
+    try {
+        int contributionId = Integer.parseInt(
+            tableModel.getValueAt(selectedRow, 0).toString()
+        );
 
-            Contribution contribution = getFormContribution();
-            contribution.setContributionId(contributionId);
+        Contribution contribution = getFormContribution();
+        contribution.setContributionId(contributionId);
 
-            contributionDAO.updateContribution(contribution);
+        boolean updated = contributionDAO.updateContribution(contribution);
 
+        if (updated) {
             JOptionPane.showMessageDialog(this,
                 "Contribution updated successfully!");
 
             clearFields();
             loadContributions();
-
-        } catch (NumberFormatException e) {
+        } else {
             JOptionPane.showMessageDialog(this,
-                "Member ID and amount must be valid numbers.");
-
-        } catch (DateTimeParseException e) {
-            JOptionPane.showMessageDialog(this,
-                "Date must be in YYYY-MM-DD format.");
-
-        } catch (IllegalArgumentException e) {
-            JOptionPane.showMessageDialog(this, e.getMessage());
-
-        } catch (RuntimeException e) {
-            JOptionPane.showMessageDialog(this,
-                "Could not update contribution: " + e.getMessage());
+                "No contribution was updated. Please check the selected record.");
         }
-    }
 
+    } catch (NumberFormatException e) {
+        JOptionPane.showMessageDialog(this,
+            "Member ID and amount must be valid numbers.");
+
+    } catch (DateTimeParseException e) {
+        JOptionPane.showMessageDialog(this,
+            "Date must be in YYYY-MM-DD format.");
+
+    } catch (IllegalArgumentException e) {
+        JOptionPane.showMessageDialog(this, e.getMessage());
+
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this,
+            "Could not update contribution: " + e.getMessage());
+    }
+}
     // Delete contribution
     private void deleteContribution() {
 
@@ -273,36 +279,43 @@ public class ContributionPanel extends JPanel {
                 clearFields();
                 loadContributions();
 
-            } catch (RuntimeException e) {
+            } catch (SQLException e) {
                 JOptionPane.showMessageDialog(this,
                     "Could not delete contribution: " + e.getMessage());
             }
         }
     }
 
-    // Load contributions from database
-    private void loadContributions() {
+  // Load contributions from database and calculate total
+private void loadContributions() {
+    tableModel.setRowCount(0);
 
-        tableModel.setRowCount(0);
-
-        try {
-            List<Contribution> contributions =
+    try {
+        List<Contribution> contributions =
                 contributionDAO.getAllContributions();
 
-            for (Contribution c : contributions) {
-                tableModel.addRow(new Object[]{
-                    c.getContributionId(),
-                    c.getMemberId(),
-                    c.getAmount(),
-                    c.getContributionDate(),
-                    c.getPaymentMethod(),
-                    c.getReferenceCode()
-                });
-            }
-
-        } catch (RuntimeException e) {
-            JOptionPane.showMessageDialog(this,
-                "Could not load contributions: " + e.getMessage());
+        for (Contribution c : contributions) {
+            tableModel.addRow(new Object[]{
+                c.getContributionId(),
+                c.getMemberId(),
+                c.getAmount(),
+                c.getContributionDate(),
+                c.getPaymentMethod(),
+                c.getReferenceCode()
+            });
         }
+
+        // Calculate total contributions
+        double total = contributionDAO.getTotalContributions();
+
+        totalContributionsLabel.setText(
+            String.format("Total Contributions: KSh %,.2f", total)
+        );
+
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this,
+            "Could not load contributions: " + e.getMessage());
     }
+}  
+
 }
